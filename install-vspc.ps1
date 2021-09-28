@@ -87,7 +87,7 @@ Function Install-MSI{
     )
     My-Logger "Installing $app ..."
     Start-Process "msiexec.exe" -ArgumentList $msi_arguments -Wait -NoNewWindow
-    if (Select-String -path "$InstallationLogFile" -pattern "Installation success or error status: 0.") {
+    if (Select-String -path "$media_path$log" -pattern "Installation success or error status: 0.") {
         My-Logger "Installing $app SUCCESS" 
     }
     else {
@@ -129,8 +129,8 @@ if($install_server -eq 1 -or $install_webui -eq 1){
     }
 }
 if($install_server -eq 1){
-    # Microsoft SQL Native Client 2021
-    $app = "Microsoft SQL Native Client 2021"
+    # Microsoft SQL Native Client 2012
+    $app = "Microsoft SQL Native Client 2012"
     $log = "prereq-sqlnc.log"
 
     $MSIArguments = @(
