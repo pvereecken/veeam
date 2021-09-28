@@ -14,8 +14,8 @@ $vspc_v5 = 0
 $vspc_v6 = 1
 
 # Install on server where VSPC Server is installed
-$install_server = 0
-$install_connectwise_manage_server = 0
+$install_server = 1
+$install_connectwise_manage_server = 1
 
 # Install on server where VSPC WebUI is Installed
 $install_webui = 1
@@ -41,7 +41,7 @@ $VSPC_SERVER_MANAGEMENT_PORT = "1989" # Default=1989
 $VSPC_SERVER_CONNECTION_HUB_PORT = "9999" # Default=9999
 
 $VSPC_SQL_SERVER = "" # Change to FQDN/IP of your MSSQL Server
-$VSPC_SQL_DATABASE_NAME = "VSPC" # Change to DB name of choice if desired
+$VSPC_SQL_DATABASE_NAME = "VSPC-$install_date" # Change to DB name of choice if desired
 $VSPC_SQL_AUTHENTICATION_MODE ="1" # 0=Windows, 1=SQL
 $VSPC_SQL_USER_USERNAME = "" # Set when SQL authentication is used
 $VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
@@ -49,23 +49,27 @@ $VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
 # VSPC WebUI
 $VSPC_WEBUI_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
 $VSPC_SERVER_NAME = "" # Change to FQDN/IP of your VSPC Server
-$VSPC_WEBUI_USERNAME = "" # v6 only
-$VSPC_WEBUI_PASSWORD = "" # v6 only
 $VSPC_SERVER_PORT = "1989" # Default=1989
 $VSPC_RESTAPI_PORT = "1281" # Default=1281
 $VSPC_WEBSITE_PORT = "1280" # Default=1280
 $VSPC_CONFIGURE_SCHANNEL = "1" # Default=1
+# VSPC WebUI - v6 only
+$VSPC_WEBUI_USERNAME = "" # v6 only
+$VSPC_WEBUI_PASSWORD = "" # v6 only
 
 # ConnectWise Manage Plugin
 $CW_MANAGE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\" # Default
 $CW_MANAGE_USERNAME = "" # Account under with the plugin will run
 $CW_MANAGE_PASSWORD = ""
 $CW_MANAGE_COMMPORT = "9996" # Default=9996
+# ConnectWise Manage Plugin - v6 only
+$VSPC_SERVER_CW_USERNAME = ""
+$VSPC_SERVER_CW_PASSWORD = ""
 
 # ConnectWise Automate Plugin
 $CW_AUTOMATE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
 
-# (optional) Remove license and iso file
+# (optional) Remove license and iso file after installation
 $cleanup = $false
 #######################################################################
 # LOGGING
@@ -315,8 +319,8 @@ if($install_webui -eq 1){
             """$source\WebUI\VAC.WebUI.x64.msi"""
             "INSTALLDIR=`"$VSPC_WEBUI_INSTALLDIR`""
             "VAC_SERVER_NAME=$VSPC_SERVER_NAME"
-            "USERNAME=`"$VSPC_WEBUI_USERNAME`""
-            "PASSWORD=`"$VSPC_WEBUI_PASSWORD`""
+            "VAC_SERVER_ACCOUNT_NAME=`"$VSPC_WEBUI_USERNAME`""
+            "VAC_SERVER_ACCOUNT_PASSWORD=`"$VSPC_WEBUI_PASSWORD`""
             "VAC_SERVER_PORT=`"$VSPC_SERVER_PORT`""
             "VAC_RESTAPI_PORT=`"$VSPC_RESTAPI_PORT`""
             "VAC_WEBSITE_PORT=`"$VSPC_WEBSITE_PORT`""
@@ -335,21 +339,42 @@ if($install_connectwise_manage_server -eq 1){
     $app = "ConnectWise Manage Plugin Server"
     $log = "connectwise-manage-server.log"
 
-    $MSIArguments = @(
-        "/L*v"
-        """$media_path\$log"""
-        "/qn"
-        "/i"
-        """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
-        "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
-        "SERVERNAME=`"$VSPC_SERVER_NAME`""
-        "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
-        "USERNAME=`"$CW_MANAGE_USERNAME`""
-        "PASSWORD=`"$CW_MANAGE_PASSWORD`""
-        "ACCEPT_THIRDPARTY_LICENSES=`"1`""
-        "ACCEPT_EULA=`"1`""
-        "/norestart"
-    )
+    if($vspc_v5 -eq 1){
+        $MSIArguments = @(
+            "/L*v"
+            """$media_path\$log"""
+            "/qn"
+            "/i"
+            """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
+            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
+            "SERVERNAME=`"$VSPC_SERVER_NAME`""
+            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
+            "USERNAME=`"$CW_MANAGE_USERNAME`""
+            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
+            "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+            "ACCEPT_EULA=`"1`""
+            "/norestart"
+        )
+    }
+    if($vspc_v6 -eq 1){
+        $MSIArguments = @(
+            "/L*v"
+            """$media_path\$log"""
+            "/qn"
+            "/i"
+            """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
+            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
+            "SERVERNAME=`"$VSPC_SERVER_NAME`""
+            "SERVER_ACCOUNT_NAME=`"$VSPC_SERVER_CW_USERNAME`""
+            "SERVER_ACCOUNT_PASSWORD=`"$VSPC_SERVER_CW_PASSWORD`""
+            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
+            "USERNAME=`"$CW_MANAGE_USERNAME`""
+            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
+            "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+            "ACCEPT_EULA=`"1`""
+            "/norestart"
+        )
+    }
     Install-MSI $MSIArguments
 }
 ##############################################
