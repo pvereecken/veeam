@@ -1,4 +1,5 @@
 # Works with Veeam Service Provider Console v5.x
+# Testing with Veeam Service Provider Console v6 in progress ...
 #
 # This script can install prerequisites, VSPC Server, VSPC WebUI and ConnectWise Plugins
 # This script does not install MSSQL so make sure a MSSQL Server is already available on on the same or a remote server.
@@ -8,15 +9,18 @@ $install_date = (Get-Date -Format yyyy-MM-dd) + "_" + (Get-Date -Format hh:mm:ss
 ##############################################
 # Components to install
 ##############################################
+# Version you are installing
+$vspc_v5 = 0
+$vspc_v6 = 1
 
 # Install on server where VSPC Server is installed
-$install_server = 1
-$install_connectwise_manage_server = 1
+$install_server = 0
+$install_connectwise_manage_server = 0
 
 # Install on server where VSPC WebUI is Installed
-$install_webui = 0
-$install_connectwise_manage_webui = 0
-$install_connectwise_automate = 0
+$install_webui = 1
+$install_connectwise_manage_webui = 1
+$install_connectwise_automate = 1
 
 ##############################################
 # Variables
@@ -24,40 +28,42 @@ $install_connectwise_automate = 0
 # General
 ## Location of installation media including storing log files
 $media_path = "C:\install\" # Change if desired, create and copy ISO and license files to it before you run the script.
-$iso = "VeeamServiceProviderConsole_5.0.0.6726_20210528.ISO" # Change to your ISO
+$iso = "VeeamServiceProviderConsole_6.0.0.7739_20210917.ISO" # Change to your ISO
 
 # VSPC Server
 $license = "vspc-license.lic" # Change to your VCC/VSPC license file
 
-$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "DOMAIN\USERNAME" # Make sure this user is added to the Local Admin group
-$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = ""
+$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "sp\svc-vspc" # Make sure this user is added to the Local Admin group
+$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = "P@ssw0rd"
 
 $VSPC_SERVER_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
 $VSPC_SERVER_MANAGEMENT_PORT = "1989" # Default=1989
 $VSPC_SERVER_CONNECTION_HUB_PORT = "9999" # Default=9999
 
-$VSPC_SQL_SERVER = "" # Change to FQDN/IP of your MSSQL Server
+$VSPC_SQL_SERVER = "sql.lab.sddc.be" # Change to FQDN/IP of your MSSQL Server
 $VSPC_SQL_DATABASE_NAME = "VSPC-$install_date" # Change to DB name of choice if desired
 $VSPC_SQL_AUTHENTICATION_MODE ="1" # 0=Windows, 1=SQL
-$VSPC_SQL_USER_USERNAME = "sa" # Set when SQL authentication is used
-$VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
+$VSPC_SQL_USER_USERNAME = "sp-vspc" # Set when SQL authentication is used
+$VSPC_SQL_USER_PASSWORD = "P@ssw0rd" # Set when SQL authentication is used
 
 # VSPC WebUI
-$VSPC_WEBUI_Installationdir = "C:\Program Files\Veeam\Availability Console" # Default
-$VSPC_SERVER_NAME = "" # Change to FQDN/IP of your VSPC Server
+$VSPC_WEBUI_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
+$VSPC_SERVER_NAME = "vspc-server6.sp.sddc.be" # Change to FQDN/IP of your VSPC Server
+$VSPC_WEBUI_USERNAME = "sp\svc-vspc" # v6 only
+$VSPC_WEBUI_PASSWORD = "P@ssw0rd" # v6 only
 $VSPC_SERVER_PORT = "1989" # Default=1989
 $VSPC_RESTAPI_PORT = "1281" # Default=1281
 $VSPC_WEBSITE_PORT = "1280" # Default=1280
 $VSPC_CONFIGURE_SCHANNEL = "1" # Default=1
 
 # ConnectWise Manage Plugin
-$CW_MANAGE_Installationdir = "C:\Program Files\Veeam\Availability Console\Integrations\" # Default
-$CW_MANAGE_USERNAME = "DOMAIN\USERNAME" # Account under with the plugin will run
-$CW_MANAGE_PASSWORD = ""
+$CW_MANAGE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\" # Default
+$CW_MANAGE_USERNAME = "sp\svc-vspc" # Account under with the plugin will run
+$CW_MANAGE_PASSWORD = "P@ssw0rd"
 $CW_MANAGE_COMMPORT = "9996" # Default=9996
 
 # ConnectWise Automate Plugin
-$CW_AUTOMATE_Installationdir = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
+$CW_AUTOMATE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
 
 # (optional) Remove license and iso file
 $cleanup = $false
@@ -117,7 +123,12 @@ if($install_server -eq 1 -or $install_webui -eq 1){
     $log = "prereq-iis.log"
     My-Logger "Installing $app ..."
     
-    Install-WindowsFeature Web-Default-Doc, Web-Dir-Browsing, Web-Http-Errors, Web-Static-Content, Web-Asp-Net45, Web-ISAPI-Ext -Restart:$false -ErrorVariable WindowsFeatureFailure | Out-Null
+    if($vspc_v5 -eq 1){
+        Install-WindowsFeature Web-Default-Doc, Web-Dir-Browsing, Web-Http-Errors, Web-Static-Content, Web-Asp-Net45, Web-ISAPI-Ext -Restart:$false -ErrorVariable WindowsFeatureFailure | Out-Null
+    }
+    if($vspc_v6 -eq 1){
+        Install-WindowsFeature Web-Default-Doc, Web-Dir-Browsing, Web-Http-Errors, Web-Static-Content, Web-Asp-Net45, Web-ISAPI-Ext, Web-WebSockets -Restart:$false -ErrorVariable WindowsFeatureFailure | Out-Null
+    }
     if ($WindowsFeatureFailure) {
         $WindowsFeatureFailure | Out-File $media_path$log -Append
         Remove-Variable WindowsFeatureFailure
@@ -180,13 +191,32 @@ if($install_server -eq 1 -or $install_webui -eq 1){
     $log = "prereq-aspdotnetcore.log"
     My-Logger "Installing $app ..."
 
-    Start-Process -NoNewWindow -FilePath "$source\Redistr\dotnet-hosting-2.2.4-win.exe" -ArgumentList "/Installation /quiet /log $media_path$log" -Wait
+    # v5 uses dotnet-hosting-2.2.4-win.exe
+    # v6 uses dotnet-hosting-2.2.8-win.exe
+    $dotnet_hosting_version = (Get-ChildItem -Path "$source\Redistr\dotnet*").Name
+    $dotnet_hosting = $source + "\Redistr\" + $dotnet_hosting_version
+    Start-Process -NoNewWindow -FilePath $dotnet_hosting -ArgumentList "/Installation /quiet /log $media_path$log" -Wait
     if (Select-String -Path "$media_path$log" -Pattern "Apply complete, result: 0x0") {
         My-Logger "Installing $app SUCCESS"
     }
     else {
         My-Logger "Installing $app FAILED"
     }
+}
+if($install_webui -eq 1 -and $vspc_v6 -eq 1){
+    # IIS URL Rewrite Module 2.1
+    $app = "IIS URL Rewrite Module 2.1"
+    $log = "prereq-iisurlrewrite.log"
+   
+    $MSIArguments = @(
+        "/i"
+        "$source\Redistr\x64\rewrite_amd64_en-US.msi"
+        "/qn"
+        "/norestart"
+        "/L*v"
+        "$media_path$log"
+    )
+    Install-MSI $MSIArguments
 }
 ##############################################
 # VSPC SERVER
@@ -203,7 +233,7 @@ if($install_server -eq 1){
         "/qn"
         "/i"
         """$source\ApplicationServer\VAC.ApplicationServer.x64.msi"""
-        "InstallationDIR=`"$VSPC_SERVER_INSTALLDIR`""
+        "INSTALLDIR=`"$VSPC_SERVER_INSTALLDIR`""
         "VAC_LICENSE_FILE=`"$media_path$license`""
         "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
         "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
@@ -227,7 +257,7 @@ if($install_server -eq 1){
         "/qn"
         "/i"
         """$source\ApplicationServer\VAC.ApplicationServer.x64.msi"""
-        "InstallationDIR=`"$VSPC_SERVER_INSTALLDIR`""
+        "INSTALLDIR=`"$VSPC_SERVER_INSTALLDIR`""
         "VAC_LICENSE_FILE=`"$media_path$license`""
         "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
         "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
@@ -258,22 +288,44 @@ if($install_webui -eq 1){
     $app = "Veeam Service Provider Console Web UI"
     $log = "vspc-webui.log"
 
-    $MSIArguments = @(
-        "/L*v"
-        """$media_path$log"""
-        "/qn"
-        "/i"
-        """$source\WebUI\VAC.WebUI.x64.msi"""
-        "InstallationDIR=`"$VSPC_WEBUI_Installationdir`""
-        "VAC_SERVER_NAME=$VSPC_SERVER_NAME"
-        "VAC_SERVER_PORT=`"$VSPC_SERVER_PORT`""
-        "VAC_RESTAPI_PORT=`"$VSPC_RESTAPI_PORT`""
-        "VAC_WEBSITE_PORT=`"$VSPC_WEBSITE_PORT`""
-        "VAC_CONFIGURE_SCHANNEL=`"$VSPC_CONFIGURE_SCHANNEL`""
-        "ACCEPT_THIRDPARTY_LICENSES=`"1`""
-        "ACCEPT_EULA=`"1`""
-        "/norestart"
-    )
+    if($vspc_v5 -eq 1){
+        $MSIArguments = @(
+            "/L*v"
+            """$media_path$log"""
+            "/qn"
+            "/i"
+            """$source\WebUI\VAC.WebUI.x64.msi"""
+            "INSTALLDIR=`"$VSPC_WEBUI_INSTALLDIR`""
+            "VAC_SERVER_NAME=$VSPC_SERVER_NAME"
+            "VAC_SERVER_PORT=`"$VSPC_SERVER_PORT`""
+            "VAC_RESTAPI_PORT=`"$VSPC_RESTAPI_PORT`""
+            "VAC_WEBSITE_PORT=`"$VSPC_WEBSITE_PORT`""
+            "VAC_CONFIGURE_SCHANNEL=`"$VSPC_CONFIGURE_SCHANNEL`""
+            "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+            "ACCEPT_EULA=`"1`""
+            "/norestart"
+        )
+    }
+    if($vspc_v6 -eq 1){
+        $MSIArguments = @(
+            "/L*v"
+            """$media_path$log"""
+            "/qn"
+            "/i"
+            """$source\WebUI\VAC.WebUI.x64.msi"""
+            "INSTALLDIR=`"$VSPC_WEBUI_INSTALLDIR`""
+            "VAC_SERVER_NAME=$VSPC_SERVER_NAME"
+            "USERNAME=`"$VSPC_WEBUI_USERNAME`""
+            "PASSWORD=`"$VSPC_WEBUI_PASSWORD`""
+            "VAC_SERVER_PORT=`"$VSPC_SERVER_PORT`""
+            "VAC_RESTAPI_PORT=`"$VSPC_RESTAPI_PORT`""
+            "VAC_WEBSITE_PORT=`"$VSPC_WEBSITE_PORT`""
+            "VAC_CONFIGURE_SCHANNEL=`"$VSPC_CONFIGURE_SCHANNEL`""
+            "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+            "ACCEPT_EULA=`"1`""
+            "/norestart"
+        )
+    }
     Install-MSI $MSIArguments
 }
 ##############################################
@@ -289,8 +341,8 @@ if($install_connectwise_manage_server -eq 1){
         "/qn"
         "/i"
         """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
-        "InstallationDIR=`"$CW_MANAGE_Installationdir`""
-        "SERVERNAME=$VSPC_SERVER_NAME"
+        "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
+        "SERVERNAME=`"$VSPC_SERVER_NAME`""
         "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
         "USERNAME=`"$CW_MANAGE_USERNAME`""
         "PASSWORD=`"$CW_MANAGE_PASSWORD`""
@@ -336,7 +388,7 @@ if($install_connectwise_automate -eq 1){
         "/qn"
         "/i"
         """$source\Plugins\ConnectWise\Automate\VAC.AutomatePlugin.x64.msi"""
-        "InstallationDIR=`"$CW_AUTOMATE_Installationdir`""
+        "INSTALLDIR=`"$CW_AUTOMATE_INSTALLDIR`""
         "ACCEPT_THIRDPARTY_LICENSES=`"1`""
         "ACCEPT_EULA=`"1`""
         "/norestart"
