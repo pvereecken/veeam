@@ -1,6 +1,7 @@
 # Works with Veeam Service Provider Console v5.x
 #
 # This script can install prerequisites, VSPC Server, VSPC WebUI and ConnectWise Plugins
+# This script does not install MSSQL so make sure a MSSQL Server is already available on on the same or a remote server.
 #
 $StartTime = (Get-Date -Format yyyy-MM-dd) + " " + (Get-Date -Format hh:mm:ss)
 $install_date = (Get-Date -Format yyyy-MM-dd) + "_" + (Get-Date -Format hh:mm:ss) | ForEach-Object { $_ -replace ":", "" }
