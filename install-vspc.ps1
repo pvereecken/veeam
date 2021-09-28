@@ -6,7 +6,7 @@
 $StartTime = (Get-Date -Format yyyy-MM-dd) + " " + (Get-Date -Format hh:mm:ss)
 $install_date = (Get-Date -Format yyyy-MM-dd) + "_" + (Get-Date -Format hh:mm:ss) | ForEach-Object { $_ -replace ":", "" }
 ##############################################
-# Components to Installation
+# Components to install
 ##############################################
 
 # Install on server where VSPC Server is installed
@@ -22,24 +22,24 @@ $install_connectwise_automate = 0
 # Variables
 ##############################################
 # General
-## Location of Installation media including storing log files
-$media_path = "C:\Install\" # Change if desired, create and copy ISO and license files to it before you run the script.
+## Location of installation media including storing log files
+$media_path = "C:\install\" # Change if desired, create and copy ISO and license files to it before you run the script.
 $iso = "VeeamServiceProviderConsole_5.0.0.6726_20210528.ISO" # Change to your ISO
 
 # VSPC Server
 $license = "vspc-license.lic" # Change to your VCC/VSPC license file
 
-$VSPC_Service_Account = "DOMAIN\USERNAME" # Make sure this user is added to the Local Admin group
-$VSPC_Service_Account_Password = ""
+$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "DOMAIN\USERNAME" # Make sure this user is added to the Local Admin group
+$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = ""
 
-$VSPC_Server_Installationdir = "C:\Program Files\Veeam\Availability Console" # Default
+$VSPC_SERVER_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
 $VSPC_SERVER_MANAGEMENT_PORT = "1989" # Default=1989
-$VSPC_CONNECTION_HUB_PORT = "9999" # Default=9999
+$VSPC_SERVER_CONNECTION_HUB_PORT = "9999" # Default=9999
 
 $VSPC_SQL_SERVER = "" # Change to FQDN/IP of your MSSQL Server
 $VSPC_SQL_DATABASE_NAME = "VSPC-$install_date" # Change to DB name of choice if desired
 $VSPC_SQL_AUTHENTICATION_MODE ="1" # 0=Windows, 1=SQL
-$VSPC_SQL_USER = "sa" # Set when SQL authentication is used
+$VSPC_SQL_USER_USERNAME = "sa" # Set when SQL authentication is used
 $VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
 
 # VSPC WebUI
@@ -85,6 +85,7 @@ Function Install-MSI{
      param(
     [Parameter(Mandatory=$true)] $msi_arguments
     )
+    My-Logger "Installing $app ..."
     Start-Process "msiexec.exe" -ArgumentList $msi_arguments -Wait -NoNewWindow
     if (Select-String -path "$InstallationLogFile" -pattern "Installation success or error status: 0.") {
         My-Logger "Installing $app SUCCESS" 
@@ -115,6 +116,7 @@ if($install_server -eq 1 -or $install_webui -eq 1){
     $app = "Microsoft IIS components"
     $log = "prereq-iis.log"
     My-Logger "Installing $app ..."
+    
     Install-WindowsFeature Web-Default-Doc, Web-Dir-Browsing, Web-Http-Errors, Web-Static-Content, Web-Asp-Net45, Web-ISAPI-Ext -Restart:$false -ErrorVariable WindowsFeatureFailure | Out-Null
     if ($WindowsFeatureFailure) {
         $WindowsFeatureFailure | Out-File $media_path$log -Append
@@ -130,7 +132,7 @@ if($install_server -eq 1){
     # Microsoft SQL Native Client 2021
     $app = "Microsoft SQL Native Client 2021"
     $log = "prereq-sqlnc.log"
-    My-Logger "Installing $app ..."
+
     $MSIArguments = @(
         "/i"
         "$source\Redistr\x64\sqlncli.msi"
@@ -146,7 +148,7 @@ if($install_server -eq 1){
     # Microsoft System CLR Types for SQL Server 2014
     $app = "Microsoft System CLR Types for SQL Server 2014"
     $log = "prereq-sqlclr.log"
-    My-Logger "Installing $app ..."
+
     $MSIArguments = @(
         "/i"
         "$source\Redistr\x64\SQLSysClrTypes.msi"
@@ -161,7 +163,7 @@ if($install_server -eq 1){
     # Microsoft Report Viewer Redistributable 2015
     $app = "Microsoft Report Viewer Redistributable 2015"
     $log = "prereq-reportviewer.log"
-    My-Logger "Installing $app ..."
+
     $MSIArguments = @(
         "/i"
         "$source\Redistr\ReportViewer.msi"
@@ -179,7 +181,6 @@ if($install_server -eq 1 -or $install_webui -eq 1){
     My-Logger "Installing $app ..."
 
     Start-Process -NoNewWindow -FilePath "$source\Redistr\dotnet-hosting-2.2.4-win.exe" -ArgumentList "/Installation /quiet /log $media_path$log" -Wait
-
     if (Select-String -Path "$media_path$log" -Pattern "Apply complete, result: 0x0") {
         My-Logger "Installing $app SUCCESS"
     }
@@ -193,7 +194,7 @@ if($install_server -eq 1 -or $install_webui -eq 1){
 if($install_server -eq 1){
     $app = "Veeam Service Provider Console Server"
     $log = "vspc-server.log"
-    My-Logger "Installing $app ..."
+
     if($VSPC_SQL_AUTHENTICATION_MODE -eq 1){
         # Use SQL authentication mode
         $MSIArguments = @(
@@ -202,17 +203,17 @@ if($install_server -eq 1){
         "/qn"
         "/i"
         """$source\ApplicationServer\VAC.ApplicationServer.x64.msi"""
-        "InstallationDIR=`"$VSPC_Server_Installationdir`""
+        "InstallationDIR=`"$VSPC_SERVER_INSTALLDIR`""
         "VAC_LICENSE_FILE=`"$media_path$license`""
-        "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_Service_Account`""
-        "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_Service_Account_Password`""
+        "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
+        "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
         "VAC_SQL_SERVER=`"$VSPC_SQL_Server`""
         "VAC_SQL_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
         "VAC_AUTHENTICATION_MODE=`"1`""
-        "VAC_SQL_USER=`"$VSPC_SQL_USER`""
+        "VAC_SQL_USER=`"$VSPC_SQL_USER_USERNAME`""
         "VAC_SQL_USER_PASSWORD=`"$VSPC_SQL_USER_PASSWORD`""
         "VAC_SERVER_MANAGEMENT_PORT=`"$VSPC_SERVER_MANAGEMENT_PORT`""
-        "VAC_CONNECTION_HUB_PORT=`"$VSPC_CONNECTION_HUB_PORT`""
+        "VAC_CONNECTION_HUB_PORT=`"$VSPC_SERVER_CONNECTION_HUB_PORT`""
         "ACCEPT_THIRDPARTY_LICENSES=`"1`""
         "ACCEPT_EULA=`"1`""
         "/norestart"
@@ -226,14 +227,14 @@ if($install_server -eq 1){
         "/qn"
         "/i"
         """$source\ApplicationServer\VAC.ApplicationServer.x64.msi"""
-        "InstallationDIR=`"$VSPC_Server_Installationdir`""
+        "InstallationDIR=`"$VSPC_SERVER_INSTALLDIR`""
         "VAC_LICENSE_FILE=`"$media_path$license`""
-        "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_Service_Account`""
-        "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_Service_Account_Password`""
+        "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
+        "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
         "VAC_SQL_SERVER=`"$VSPC_SQL_Server`""
         "VAC_SQL_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
         "VAC_SERVER_MANAGEMENT_PORT=`"$VSPC_SERVER_MANAGEMENT_PORT`""
-        "VAC_CONNECTION_HUB_PORT=`"$VSPC_CONNECTION_HUB_PORT`""
+        "VAC_CONNECTION_HUB_PORT=`"$VSPC_SERVER_CONNECTION_HUB_PORT`""
         "ACCEPT_THIRDPARTY_LICENSES=`"1`""
         "ACCEPT_EULA=`"1`""
         "/norestart"
@@ -256,7 +257,6 @@ if($cleanup -eq $true){
 if($install_webui -eq 1){
     $app = "Veeam Service Provider Console Web UI"
     $log = "vspc-webui.log"
-    My-Logger "Installing $app ..."
 
     $MSIArguments = @(
         "/L*v"
@@ -282,7 +282,6 @@ if($install_webui -eq 1){
 if($install_connectwise_manage_server -eq 1){
     $app = "ConnectWise Manage Plugin Server"
     $log = "connectwise-manage-server.log"
-    My-Logger "Installing $app ..."
 
     $MSIArguments = @(
         "/L*v"
@@ -307,7 +306,6 @@ if($install_connectwise_manage_server -eq 1){
 if($install_connectwise_manage_webui -eq 1){
     $app = "ConnectWise Manage Plugin Web UI"
     $log = "connectwise-manage-webui.log"
-    My-Logger "Installing $app ..."
 
     $MSIArguments = @(
         "/L*v"
@@ -331,7 +329,6 @@ if($install_connectwise_manage_webui -eq 1){
 if($install_connectwise_automate -eq 1){
     $app = "ConnectWise Automate Plugin"
     $log = "connectwise-automate.log"
-    My-Logger "Installing $app ..."
 
     $MSIArguments = @(
         "/L*v"
