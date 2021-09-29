@@ -28,11 +28,13 @@ $install_connectwise_automate = 1
 # General
 ## Location of installation media including storing log files
 $media_path = "C:\install\" # Change if desired, create and copy ISO and license files to it before you run the script.
+#$iso = "VeeamServiceProviderConsole_5.0.0.6726_20210528.ISO" # Change to your ISO and copy into $media_path e.g. C:\install\
 $iso = "VeeamServiceProviderConsole_6.0.0.7739_20210917.ISO" # Change to your ISO and copy into $media_path e.g. C:\install\
 
 # VSPC Server
 $license = "vspc-license.lic" # Change to your VCC/VSPC license file and copy into $media_path e.g. C:\install\
 
+$VSPC_SERVER_NAME = "" # Change to FQDN/IP of your VSPC Server
 $VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "" #  Service account under which VSPC Server service will run, make sure it's added to Local Admin group
 $VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = ""
 
@@ -42,13 +44,12 @@ $VSPC_SERVER_CONNECTION_HUB_PORT = "9999" # Default=9999
 
 $VSPC_SQL_SERVER = "" # Change to FQDN/IP of your MSSQL Server
 $VSPC_SQL_DATABASE_NAME = "VSPC-$install_date" # Change to DB name of choice if desired
-$VSPC_SQL_AUTHENTICATION_MODE ="" # 0=Windows, 1=SQL; When set to Windows, make sure the service account can access the MSSQL database
+$VSPC_SQL_AUTHENTICATION_MODE = "" # 0=Windows, 1=SQL; When set to Windows, make sure the service account can access the MSSQL database
 $VSPC_SQL_USER_USERNAME = "" # Set when SQL authentication is used
 $VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
 
 # VSPC WebUI
 $VSPC_WEBUI_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
-$VSPC_SERVER_NAME = "" # Change to FQDN/IP of your VSPC Server
 $VSPC_SERVER_PORT = "1989" # Default=1989
 $VSPC_RESTAPI_PORT = "1281" # Default=1281
 $VSPC_WEBSITE_PORT = "1280" # Default=1280
@@ -61,8 +62,8 @@ $CW_MANAGE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integration
 $CW_MANAGE_USERNAME = "" #  Service account under which Plugin service will run
 $CW_MANAGE_PASSWORD = ""
 $CW_MANAGE_COMMPORT = "9996" # Default=9996
-$VSPC_SERVER_CW_USERNAME="" # v6 only - Service account under which Plugin service will run
-$VSPC_SERVER_CW_PASSWORD="" # v6 only
+$VSPC_SERVER_CW_USERNAME= "" # v6 only - Service account to connect to VSPC Server
+$VSPC_SERVER_CW_PASSWORD= "" # v6 only
 
 # ConnectWise Automate Plugin
 $CW_AUTOMATE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
@@ -240,7 +241,7 @@ if($install_server -eq 1){
         "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
         "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
         "VAC_SQL_SERVER=`"$VSPC_SQL_Server`""
-        "VAC_SQL_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
+        "VAC_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
         "VAC_AUTHENTICATION_MODE=`"1`""
         "VAC_SQL_USER=`"$VSPC_SQL_USER_USERNAME`""
         "VAC_SQL_USER_PASSWORD=`"$VSPC_SQL_USER_PASSWORD`""
@@ -264,7 +265,7 @@ if($install_server -eq 1){
         "VAC_SERVICE_ACCOUNT_NAME=`"$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME`""
         "VAC_SERVICE_ACCOUNT_PASSWORD=`"$VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD`""
         "VAC_SQL_SERVER=`"$VSPC_SQL_Server`""
-        "VAC_SQL_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
+        "VAC_DATABASE_NAME=`"$VSPC_SQL_DATABASE_NAME`""
         "VAC_SERVER_MANAGEMENT_PORT=`"$VSPC_SERVER_MANAGEMENT_PORT`""
         "VAC_CONNECTION_HUB_PORT=`"$VSPC_SERVER_CONNECTION_HUB_PORT`""
         "ACCEPT_THIRDPARTY_LICENSES=`"1`""
@@ -344,13 +345,13 @@ if($install_connectwise_manage_server -eq 1){
             "/qn"
             "/i"
             """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
-            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
-            "SERVERNAME=`"$VSPC_SERVER_NAME`""
-            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
-            "USERNAME=`"$CW_MANAGE_USERNAME`""
-            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
             "ACCEPT_THIRDPARTY_LICENSES=`"1`""
             "ACCEPT_EULA=`"1`""
+            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
+            "USERNAME=`"$CW_MANAGE_USERNAME`""
+            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
+            #"SERVERNAME=`"$VSPC_SERVER_NAME`""
+            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
             "/norestart"
         )
     }
