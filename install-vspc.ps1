@@ -28,10 +28,10 @@ $install_connectwise_automate = 1
 # General
 ## Location of installation media including storing log files
 $media_path = "C:\install\" # Change if desired, create and copy ISO and license files to it before you run the script.
-$iso = "VeeamServiceProviderConsole_6.0.0.7739_20210917.ISO" # Change to your ISO
+$iso = "VeeamServiceProviderConsole_6.0.0.7739_20210917.ISO" # Change to your ISO and copy into $media_path e.g. C:\install\
 
 # VSPC Server
-$license = "vspc-license.lic" # Change to your VCC/VSPC license file
+$license = "vspc-license.lic" # Change to your VCC/VSPC license file and copy into $media_path e.g. C:\install\
 
 $VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "" # Make sure this user is added to the Local Admin group
 $VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = ""
