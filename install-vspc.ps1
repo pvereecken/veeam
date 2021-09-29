@@ -1,5 +1,5 @@
 # Works with Veeam Service Provider Console v5.x
-# Testing with Veeam Service Provider Console v6 in progress ...
+# Works with Veeam Service Provider Console v6.x
 #
 # This script can install prerequisites, VSPC Server, VSPC WebUI and ConnectWise Plugins
 # This script does not install MSSQL so make sure a MSSQL Server is already available on on the same or a remote server.
@@ -9,15 +9,15 @@ $install_date = (Get-Date -Format yyyy-MM-dd) + "_" + (Get-Date -Format hh:mm:ss
 ##############################################
 # Components to install
 ##############################################
-# Version you are installing
+# Choose the version you are installing
 $vspc_v5 = 0
 $vspc_v6 = 1
 
-# Install on server where VSPC Server is installed
+# To install on server where VSPC Server is installed
 $install_server = 1
 $install_connectwise_manage_server = 1
 
-# Install on server where VSPC WebUI is Installed
+# To install on server where VSPC WebUI is Installed
 $install_webui = 1
 $install_connectwise_manage_webui = 1
 $install_connectwise_automate = 1
@@ -63,13 +63,13 @@ $CW_MANAGE_USERNAME = "" # Account under with the plugin will run
 $CW_MANAGE_PASSWORD = ""
 $CW_MANAGE_COMMPORT = "9996" # Default=9996
 # ConnectWise Manage Plugin - v6 only
-$VSPC_SERVER_CW_USERNAME = ""
-$VSPC_SERVER_CW_PASSWORD = ""
+$VSPC_SERVER_CW_USERNAME=""
+$VSPC_SERVER_CW_PASSWORD=""
 
 # ConnectWise Automate Plugin
 $CW_AUTOMATE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
 
-# (optional) Remove license and iso file after installation
+# (optional) Remove license and iso file
 $cleanup = $false
 #######################################################################
 # LOGGING
@@ -121,7 +121,7 @@ $iso_driveletter = (Get-DiskImage -ImagePath $mount_iso | Get-Volume).DriveLette
 $source = $iso_driveletter + ":"
 My-Logger "Mounted $source\$iso ..."
 
-if($install_server -eq 1 -or $install_webui -eq 1){
+if($install_webui -eq 1){
     # Microsoft IIS components
     $app = "Microsoft IIS components"
     $log = "prereq-iis.log"
@@ -189,7 +189,7 @@ if($install_server -eq 1){
     )
     Install-MSI $MSIArguments
 }
-if($install_server -eq 1 -or $install_webui -eq 1){
+if($install_webui -eq 1){
     # Microsoft ASP.NET Core Module V2
     $app = "Microsoft ASP.NET Core Module V2"
     $log = "prereq-aspdotnetcore.log"
@@ -363,15 +363,15 @@ if($install_connectwise_manage_server -eq 1){
             "/qn"
             "/i"
             """$source\Plugins\ConnectWise\Manage\VAC.ConnectorService.x64.msi"""
-            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
-            "SERVERNAME=`"$VSPC_SERVER_NAME`""
-            "SERVER_ACCOUNT_NAME=`"$VSPC_SERVER_CW_USERNAME`""
-            "SERVER_ACCOUNT_PASSWORD=`"$VSPC_SERVER_CW_PASSWORD`""
-            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
-            "USERNAME=`"$CW_MANAGE_USERNAME`""
-            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
             "ACCEPT_THIRDPARTY_LICENSES=`"1`""
             "ACCEPT_EULA=`"1`""
+            "INSTALLDIR=`"$CW_MANAGE_INSTALLDIR`""
+            "USERNAME=`"$CW_MANAGE_USERNAME`""
+            "PASSWORD=`"$CW_MANAGE_PASSWORD`""
+            "SERVER_ACCOUNT_NAME=`"$VSPC_SERVER_CW_USERNAME`""
+            "SERVER_ACCOUNT_PASSWORD=`"$VSPC_SERVER_CW_PASSWORD`""
+            "SERVER_NAME=`"$VSPC_SERVER_NAME`""
+            "VAC_CW_COMMUNICATION_PORT=`"$CW_MANAGE_COMMPORT`""
             "/norestart"
         )
     }
