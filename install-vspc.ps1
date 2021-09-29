@@ -33,7 +33,7 @@ $iso = "VeeamServiceProviderConsole_6.0.0.7739_20210917.ISO" # Change to your IS
 # VSPC Server
 $license = "vspc-license.lic" # Change to your VCC/VSPC license file and copy into $media_path e.g. C:\install\
 
-$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "" # Make sure this user is added to the Local Admin group
+$VSPC_SERVER_SERVICE_ACCOUNT_USERNAME = "" #  Service account under which VSPC Server service will run, make sure it's added to Local Admin group
 $VSPC_SERVER_SERVICE_ACCOUNT_PASSWORD = ""
 
 $VSPC_SERVER_INSTALLDIR = "C:\Program Files\Veeam\Availability Console" # Default
@@ -42,7 +42,7 @@ $VSPC_SERVER_CONNECTION_HUB_PORT = "9999" # Default=9999
 
 $VSPC_SQL_SERVER = "" # Change to FQDN/IP of your MSSQL Server
 $VSPC_SQL_DATABASE_NAME = "VSPC-$install_date" # Change to DB name of choice if desired
-$VSPC_SQL_AUTHENTICATION_MODE ="1" # 0=Windows, 1=SQL
+$VSPC_SQL_AUTHENTICATION_MODE ="" # 0=Windows, 1=SQL; When set to Windows, make sure the service account can access the MSSQL database
 $VSPC_SQL_USER_USERNAME = "" # Set when SQL authentication is used
 $VSPC_SQL_USER_PASSWORD = "" # Set when SQL authentication is used
 
@@ -53,18 +53,16 @@ $VSPC_SERVER_PORT = "1989" # Default=1989
 $VSPC_RESTAPI_PORT = "1281" # Default=1281
 $VSPC_WEBSITE_PORT = "1280" # Default=1280
 $VSPC_CONFIGURE_SCHANNEL = "1" # Default=1
-# VSPC WebUI - v6 only
-$VSPC_WEBUI_USERNAME = "" # v6 only
+$VSPC_WEBUI_USERNAME = "" # v6 only - Service account under which Web UI service will run
 $VSPC_WEBUI_PASSWORD = "" # v6 only
 
 # ConnectWise Manage Plugin
 $CW_MANAGE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\" # Default
-$CW_MANAGE_USERNAME = "" # Account under with the plugin will run
+$CW_MANAGE_USERNAME = "" #  Service account under which Plugin service will run
 $CW_MANAGE_PASSWORD = ""
 $CW_MANAGE_COMMPORT = "9996" # Default=9996
-# ConnectWise Manage Plugin - v6 only
-$VSPC_SERVER_CW_USERNAME=""
-$VSPC_SERVER_CW_PASSWORD=""
+$VSPC_SERVER_CW_USERNAME="" # v6 only - Service account under which Plugin service will run
+$VSPC_SERVER_CW_PASSWORD="" # v6 only
 
 # ConnectWise Automate Plugin
 $CW_AUTOMATE_INSTALLDIR = "C:\Program Files\Veeam\Availability Console\Integrations\ConnectWiseAutomate\" # Default
