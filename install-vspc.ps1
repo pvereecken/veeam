@@ -275,15 +275,6 @@ if($install_server -eq 1){
     }
     Install-MSI $MSIArguments
 }
-if($cleanup -eq $true){
-    My-Logger "Cleaning up ..."
-    # Remove license file
-    Remove-Item $media_path$license
-    My-Logger "Removed: $license"
-    # Remove ISO file
-    Remove-Item $media_path$iso
-    My-Logger "Removed: $iso"
-}
 ##############################################
 # VSPC WEBUI
 ##############################################
@@ -425,6 +416,16 @@ if($install_connectwise_automate -eq 1){
 # UnMount ISO
 Dismount-DiskImage -ImagePath $mount_iso
 My-Logger "ISO dismounted."
+
+if($cleanup -eq $true){
+    My-Logger "Cleaning up ..."
+    # Remove license file
+    Remove-Item $media_path$license
+    My-Logger "Removed: $license"
+    # Remove ISO file
+    Remove-Item $media_path$iso
+    My-Logger "Removed: $iso"
+}
 
 $EndTime = (Get-Date -Format yyyy-MM-dd) + " " + (Get-Date -Format hh:mm:ss)
 $duration = [math]::Round((New-TimeSpan -Start $StartTime -End $EndTime).TotalMinutes,2)
