@@ -1,4 +1,4 @@
-# Works with Veeam Backup & Replication v11 RTM/GA releases.
+# Works with Veeam Backup & Replication v11 RTM, GA, 11a releases.
 #
 # This script can install prerequisites, VBR Server, VBR Console and Veeam Explorers
 # At the end updates are copied to the media path, but need to be manually installed!
@@ -29,7 +29,7 @@ $install_date = (Get-Date -Format yyyy-MM-dd) + "_" + (Get-Date -Format hh:mm:ss
 # General
 ## Location of installation media including storing log files
 $media_path = "C:\install\" # Change if desired, create and copy ISO and license files to it before you run the script.
-$iso = "VeeamBackup&Replication_11.0.0.837_20210525.ISO" # Change to your ISO and copy into $media_path e.g. C:\install\
+$iso = "VeeamBackup&Replication_11.0.1.1261_20210930_11a.ISO" # Change to your ISO and copy into $media_path e.g. C:\install\
 
 # Log
 $install_log = "install-vbr.log"
@@ -134,7 +134,7 @@ $MSIArguments = @(
     "/L*v"
     "$media_path$log"
     "ACCEPTEULA=YES"
-    "VBR_LICENSE_FILE=$license"
+    "VBR_LICENSE_FILE=$media_path\$license"
     "VBR_SQLSERVER_SERVER=$vbr_sqlserver"
     "VBR_SQLSERVER_DATABASE=$vbr_sqldb"
     "VBR_SQLSERVER_AUTHENTICATION=1"
