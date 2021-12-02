@@ -1,6 +1,6 @@
-# Works with Veeam Backup & Replication v11 RTM, GA, 11a releases.
+# Works with Veeam Backup & Replication v11 RTM/GA releases.
 #
-# This script can install prerequisites, VBR Server, VBR Console and Veeam Explorers
+# This script can install prerequisites, VBR Server, VBR Console, Veeam Explorers and Public Cloud Plug-ins.
 # At the end updates are copied to the media path, but need to be manually installed!
 # This script does not install MSSQL so make sure a MSSQL Server is already available on on the same or a remote server.
 #
@@ -38,7 +38,7 @@ $install_log = "install-vbr.log"
 $license = "vbr-license.lic" # Change to your VBR/VCC license file and copy into $media_path e.g. C:\install\
 
 $vbr_sqlserver = ""
-$vbr_sqldb = "vbr-$install_date"
+$vbr_sqldb = ""
 $vbr_sqluser = ""
 $vbr_sqlpwd = ""
 $vbr_nfsdatastore = "C:\vPowerNFS"
@@ -121,6 +121,26 @@ $MSIArguments = @(
     "$media_path$log"
 )
 Install-MSI $MSIArguments
+
+# Microsoft .NET Core Runtime 3.1.16
+$app = "Microsoft .NET Core Runtime 3.1.16"
+$log = "prereq-dotnet-runtime.log"
+
+$command = "F:\Redistr\x64\dotnet-runtime-3.1.16-win-x64.exe"
+$Arguments = "/install /quiet /norestart /log $media_path$log"
+
+My-Logger "Installing $app"
+Start-Process -NoNewWindow -FilePath $command -ArgumentList $Arguments -Wait
+
+# Microsoft ASP.NET Core Shared Framework 3.1.16
+$app = "Microsoft ASP.NET Core Shared Framework 3.1.16"
+$log = "prereq-aspnetcore-runtime.log"
+
+$command = "F:\Redistr\x64\aspnetcore-runtime-3.1.16-win-x64.exe"
+$Arguments = "/install /quiet /norestart /log $media_path$log"
+
+My-Logger "Installing $app"
+Start-Process -NoNewWindow -FilePath $command -ArgumentList $Arguments -Wait
 ##############################################
 # Install Veeam Backup & Replication Server
 ##############################################
@@ -247,6 +267,96 @@ $MSIArguments = @(
 Install-MSI $MSIArguments 
 
 ##############################################
+# Install Plug-ins for AWS/Azure/GCP
+##############################################
+
+# Veeam Backup for AWS
+$app = "Veeam Backup for AWS"
+$log = "vb-aws.log"
+
+$MSIArguments = @(
+    "/i"
+    "$source\Plugins\AWS\AWSPlugin.msi"
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+
+$app = "Veeam Backup for AWS UI"
+$MSIArguments = @(
+    "/i"
+    "$source\Plugins\AWS\AWSPluginUI.msi"
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+
+# Veeam Backup for Microsoft Azure
+$app = "Veeam Backup for Microsoft Azure"
+$log = "vb-azure.log"
+
+$MSIArguments = @(
+    "/i"
+    "`"$source\Plugins\Microsoft Azure\MicrosoftAzurePluginUI.msi`""
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+
+$app = "Veeam Backup for Microsoft Azure UI"
+$MSIArguments = @(
+    "/i"
+    "`"$source\Plugins\Microsoft Azure\MicrosoftAzurePluginUI.msi`""
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+
+# Veeam Backup for GCP
+$app = "Veeam Backup for GCP"
+$log = "vb-gcp.log"
+
+$MSIArguments = @(
+    "/i"
+    "$source\Plugins\GCP\GCPPlugin.msi"
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+
+$app = "Veeam Backup for GCP UI"
+$MSIArguments = @(
+    "/i"
+    "$source\Plugins\GCP\GCPPluginUI.msi"
+    "/qn"
+    "/norestart"
+    "/L*v"
+    "$media_path$log"
+    "ACCEPT_EULA=`"1`""
+    "ACCEPT_THIRDPARTY_LICENSES=`"1`""
+)
+Install-MSI $MSIArguments
+##############################################
 # Install updates/patches if applicable
 ##############################################
 
@@ -287,7 +397,7 @@ if($cleanup -eq $true){
     Remove-Item $media_path$license
     My-Logger "Removed: $license"
     # Remove ISO file
-    Remove-Item $media_path$iso
+    Remove-Item $media_path$iso 
     My-Logger "Removed: $iso"
 }
 
